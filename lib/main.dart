@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'halaman_bacaan.dart';
+import 'data_surah.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -11,7 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: "Al-Qur'an Digital",
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -28,9 +32,9 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: .fromSeed(seedColor: Colors.blueGrey),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: "Al-Qur'an Digital"),
     );
   }
 }
@@ -54,18 +58,35 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  
+Future<void> simpanSurahTerakhir(String namaSurah) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('surahTerakhir', namaSurah);
+}
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+Future<void> muatSurahTerakhir() async {
+  final prefs = await SharedPreferences.getInstance();
+  final nama = prefs.getString('surahTerakhir');
+
+  if (!mounted) return;
+
+  setState(() {
+    surahTerakhir = nama;
+  });
+}
+
+  String? surahTerakhir;
+  final TextEditingController pencarianController =
+    TextEditingController();
+
+String kataPencarian = '';
+  
+   
+@override
+void initState() {
+  super.initState();
+  muatSurahTerakhir();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -85,10 +106,8 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
+           body: SingleChildScrollView(
+            child: Column(
           // Column is also a layout widget. It takes a list of children and
           // arranges them vertically. By default, it sizes itself to fit its
           // children horizontally, and tries to be as tall as its parent.
@@ -102,20 +121,114 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisAlignment: MainAxisAlignment.start,
+
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+            const Text("Assalamu'alaikum",style:TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
+            const Text("Selamat datang di Al-Qur'an Digital"),
+            const Text("Temukan dan baca surah Al-Qur'an"),
+            TextField(
+               controller: pencarianController,
+               decoration: const InputDecoration(
+               hintText: 'Cari nama surah...',
+               prefixIcon: Icon(Icons.search),
+               border: OutlineInputBorder(),
+                         ),
+               onChanged: (value) {
+               setState(() {
+              kataPencarian = value;
+                     });
+                   },
+                  )   ,
+                   const SizedBox(height: 20),
+                 Padding(
+                   padding: const EdgeInsets.all(12),
+                    child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                    'Bacaan Terakhir',
+                    style: TextStyle(
+                   fontSize: 20,
+                   fontWeight: FontWeight.bold,
+
+                    ),
+                   ),
+                  ),
+                 ),
+              Card(
+               child: ListTile(
+              onTap: () async {
+final nama = surahTerakhir!;
+
+setState(() {
+surahTerakhir = nama;
+});
+
+await simpanSurahTerakhir(nama);
+
+if (!context.mounted) return;
+
+Navigator.push(
+context,
+MaterialPageRoute(
+builder: (context) => HalamanBacaan(
+namaSurah: nama,
+),
+),
+);
+},
+          leading: const Icon(Icons.menu_book),
+           title: Text(surahTerakhir ?? 'Belum ada bacaan'),
+           subtitle: Text(
+            surahTerakhir == null
+          ? 'Surah yang terakhir kamu buka akan muncul di sini.'
+          : 'Ketuk untuk membaca kembali',
+    ),
+    trailing: const Icon(Icons.chevron_right),
+  ),
+),
+const SizedBox(height: 12),
+
+...dataSurah
+    .where((surah) {
+      return surah['nama']
+          .toLowerCase()
+          .contains(kataPencarian.toLowerCase());
+               })
+     .map((surah) {
+
+  return Card(
+    child: ListTile(
+ onTap: () async {
+  final nama = surah['nama'] as String;
+
+  setState(() {
+    surahTerakhir = nama;
+  });
+
+  await simpanSurahTerakhir(nama);
+
+  if (!context.mounted) return;
+
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => HalamanBacaan(
+        namaSurah: nama,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    ),
+  );
+
+  await muatSurahTerakhir();
+},
+      leading: CircleAvatar(child: Text("${surah['nomor']}")),
+      title: Text(surah['nama']),
+      subtitle: Text("${surah['jumlahAyat']} ayat"),
+      trailing: const Icon(Icons.chevron_right),
+    ),
+  );
+})],
+        ),
       ),
     );
   }
