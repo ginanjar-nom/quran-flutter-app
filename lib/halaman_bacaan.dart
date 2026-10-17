@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'data_surah.dart';
 
-class HalamanBacaan extends StatelessWidget {
+class HalamanBacaan extends StatefulWidget {
   final String namaSurah;
 
   const HalamanBacaan({
@@ -9,12 +10,53 @@ class HalamanBacaan extends StatelessWidget {
     required this.namaSurah,
   });
 
+  
+  @override
+  State<HalamanBacaan> createState() => _HalamanBacaanState();
+}
+
+class _HalamanBacaanState extends State<HalamanBacaan> {
+int? ayatTerakhir;
+
+@override
+void initState() {
+  super.initState();
+  muatPenandaAyat();
+}
+
+
+Future<void> muatPenandaAyat() async {
+  final prefs = await SharedPreferences.getInstance();
+  final nomor = prefs.getInt('penanda_${widget.namaSurah}');
+
+  if (!mounted) return;
+
+  setState(() {
+    ayatTerakhir = nomor;
+  });
+}
+
+Future<void> simpanPenandaAyat(int nomorAyat) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  await prefs.setInt(
+    'penanda_${widget.namaSurah}',
+    nomorAyat,
+  );
+
+  if (!mounted) return;
+
+  setState(() {
+    ayatTerakhir = nomorAyat;
+  });
+}
+
   @override
   Widget build(BuildContext context) {
     // Memilih data ayat berdasarkan nama surah.
     final List<Map<String, dynamic>> daftarAyat;
 
-    if (namaSurah == 'Al-Baqarah') {
+    if (widget.namaSurah == 'Al-Baqarah') {
       daftarAyat = dataAyatBaqarah;
     } else {
       daftarAyat = dataAyatFatihah;
@@ -22,7 +64,7 @@ class HalamanBacaan extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(namaSurah),
+        title: Text(widget.namaSurah),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -41,7 +83,25 @@ class HalamanBacaan extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text('Ayat ${ayat['nomor']}'),
+                   
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Text('Ayat ${ayat['nomor']}'),
+    IconButton(
+      icon: Icon(
+        ayatTerakhir == ayat['nomor']
+            ? Icons.bookmark
+            : Icons.bookmark_border,
+      ),
+      onPressed: () {
+        simpanPenandaAyat(ayat['nomor'] as int);
+      },
+      tooltip: 'Tandai ayat terakhir',
+    ),
+  ],
+),
+
                     const SizedBox(height: 8),
                     Text(
                       ayat['terjemahan'],
