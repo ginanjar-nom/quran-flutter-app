@@ -4,10 +4,12 @@ import 'data_surah.dart';
 
 class HalamanBacaan extends StatefulWidget {
   final String namaSurah;
+ final int? nomorAyatTujuan;
 
   const HalamanBacaan({
     super.key,
     required this.namaSurah,
+     this.nomorAyatTujuan,
   });
 
   
@@ -17,12 +19,39 @@ class HalamanBacaan extends StatefulWidget {
 
 class _HalamanBacaanState extends State<HalamanBacaan> {
 int? ayatTerakhir;
+ final ScrollController scrollController = ScrollController();
+ final Map<int, GlobalKey> kunciAyat = {};
 
-@override
+ @override
 void initState() {
   super.initState();
   muatPenandaAyat();
+  menujuAyatTujuan();
 }
+
+
+void menujuAyatTujuan() {
+  final nomor = widget.nomorAyatTujuan;
+
+  if (nomor == null) return;
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted) return;
+
+    final kunci = kunciAyat[nomor];
+    final konteksAyat = kunci?.currentContext;
+
+    if (konteksAyat == null) return;
+
+    Scrollable.ensureVisible(
+      konteksAyat,
+      duration: const Duration(milliseconds: 500),
+      alignment: 0.1,
+    );
+  });
+}
+
+
 
 
 Future<void> muatPenandaAyat() async {
@@ -36,20 +65,28 @@ Future<void> muatPenandaAyat() async {
   });
 }
 
+
+
+
 Future<void> simpanPenandaAyat(int nomorAyat) async {
   final prefs = await SharedPreferences.getInstance();
 
-  await prefs.setInt(
-    'penanda_${widget.namaSurah}',
-    nomorAyat,
-  );
+  final kunci = 'penanda_${widget.namaSurah}';
+
+  if (ayatTerakhir == nomorAyat) {
+    await prefs.remove(kunci);
+  } else {
+    await prefs.setInt(kunci, nomorAyat);
+  }
 
   if (!mounted) return;
 
   setState(() {
-    ayatTerakhir = nomorAyat;
+    ayatTerakhir =
+        ayatTerakhir == nomorAyat ? null : nomorAyat;
   });
 }
+
 
   @override
   Widget build(BuildContext context) {
@@ -67,15 +104,20 @@ Future<void> simpanPenandaAyat(int nomorAyat) async {
         title: Text(widget.namaSurah),
       ),
       body: SingleChildScrollView(
+        controller: scrollController,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
               ...daftarAyat.map((ayat) {
-                return Column(
-                  children: [
-                    Text(
-                      ayat['arab'],
+               return Column(
+                key: kunciAyat.putIfAbsent(
+                  ayat['nomor'] as int,
+                 () => GlobalKey(),
+                       ),
+                        children: [
+                       Text(
+                       ayat['arab'],
                       textAlign: TextAlign.center,
                       textDirection: TextDirection.rtl,
                       style: const TextStyle(

@@ -42,6 +42,35 @@ const List<Map<String, dynamic>> dataAyatFatihah = [
     "arab": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
     "terjemahan": "Segala puji bagi Allah, Tuhan seluruh alam.",
   },
+  
+  {
+    "nomor": 3,
+    "arab": "الرَّحْمَٰنِ الرَّحِيمِ",
+    "terjemahan": "Yang Maha Pengasih, Maha Penyayang.",
+  },
+  {
+    "nomor": 4,
+    "arab": "مَالِكِ يَوْمِ الدِّينِ",
+    "terjemahan": "Pemilik hari pembalasan.",
+  },
+  {
+    "nomor": 5,
+    "arab": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+    "terjemahan": "Hanya kepada Engkaulah kami menyembah dan hanya kepada Engkaulah kami mohon pertolongan.",
+  },
+  {
+    "nomor": 6,
+    "arab": "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
+    "terjemahan": "Tunjukilah kami jalan yang lurus.",
+  },
+  {
+    "nomor": 7,
+    "arab": "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ",
+    "terjemahan": "Yaitu jalan orang-orang yang telah Engkau beri nikmat kepadanya; bukan jalan mereka yang dimurkai dan bukan pula mereka yang sesat.",
+  },
+
+
+
 ];
 
 const List<Map<String, dynamic>> dataAyatBaqarah = [

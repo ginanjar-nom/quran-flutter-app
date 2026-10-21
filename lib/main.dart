@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'halaman_bacaan.dart';
 import 'data_surah.dart';
+import 'halaman_bookmark.dart';
 
 
 void main() {
@@ -63,6 +64,40 @@ Future<void> simpanSurahTerakhir(String namaSurah) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('surahTerakhir', namaSurah);
 }
+Future<List<String>> muatSurahFavorit() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getStringList('surahFavorit') ?? [];
+}
+
+
+Future<void> muatFavorit() async {
+  final daftar = await muatSurahFavorit();
+
+  if (!mounted) return;
+
+  setState(() {
+    surahFavorit = daftar.toSet();
+  });
+}
+
+Future<void> ubahFavorit(String namaSurah) async {
+  setState(() {
+    if (surahFavorit.contains(namaSurah)) {
+      surahFavorit.remove(namaSurah);
+    } else {
+      surahFavorit.add(namaSurah);
+    }
+  });
+
+  await simpanSurahFavorit(surahFavorit.toList());
+}
+
+Future<void> simpanSurahFavorit(List<String> daftarFavorit) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setStringList('surahFavorit', daftarFavorit);
+}
+
+
 
 Future<void> muatSurahTerakhir() async {
   final prefs = await SharedPreferences.getInstance();
@@ -76,6 +111,7 @@ Future<void> muatSurahTerakhir() async {
 }
 
   String? surahTerakhir;
+  Set<String> surahFavorit = {};
   final TextEditingController pencarianController =
     TextEditingController();
 
@@ -86,6 +122,7 @@ String kataPencarian = '';
 void initState() {
   super.initState();
   muatSurahTerakhir();
+   muatFavorit();
 }
 
   @override
@@ -95,17 +132,28 @@ void initState() {
     //
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+   
+return Scaffold(
+  appBar: AppBar(
+    backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+    title: Text(widget.title),
+    actions: [
+      IconButton(
+        icon: const Icon(Icons.bookmarks_outlined),
+        tooltip: 'Bookmark Saya',
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HalamanBookmark(),
+            ),
+          );
+        },
       ),
+    ],
+  ),
+ // than having to individually change instances of widgets.
+  
            body: SingleChildScrollView(
             child: Column(
           // Column is also a layout widget. It takes a list of children and
@@ -224,7 +272,28 @@ const SizedBox(height: 12),
       leading: CircleAvatar(child: Text("${surah['nomor']}")),
       title: Text(surah['nama']),
       subtitle: Text("${surah['jumlahAyat']} ayat"),
-      trailing: const Icon(Icons.chevron_right),
+      
+trailing: Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    
+IconButton(
+  icon: Icon(
+    surahFavorit.contains(surah['nama'])
+        ? Icons.favorite
+        : Icons.favorite_border,
+    color: Colors.red,
+  ),
+  onPressed: () {
+    ubahFavorit(surah['nama'] as String);
+  },
+  tooltip: 'Surah favorit',
+),
+
+    const Icon(Icons.chevron_right),
+  ],
+),
+
     ),
   );
 })],
