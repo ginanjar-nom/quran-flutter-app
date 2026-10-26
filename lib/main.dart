@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'halaman_bacaan.dart';
 import 'data_surah.dart';
 import 'halaman_bookmark.dart';
+import 'api_quran.dart';
 
 
 void main() {
@@ -235,7 +236,37 @@ namaSurah: nama,
     trailing: const Icon(Icons.chevron_right),
   ),
 ),
+
+
 const SizedBox(height: 12),
+
+ElevatedButton(
+  onPressed: () async {
+    try {
+      final hasil = await ambilDataSurah(2);
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Berhasil: ${hasil["namaLatin"]}'),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengambil data: $e'),
+        ),
+      );
+    }
+  },
+  child: const Text('Tes API Al-Baqarah'),
+),
+
+const SizedBox(height: 12),
+
 
 ...dataSurah
     .where((surah) {
@@ -253,6 +284,7 @@ const SizedBox(height: 12),
   setState(() {
     surahTerakhir = nama;
   });
+
 
   await simpanSurahTerakhir(nama);
 
