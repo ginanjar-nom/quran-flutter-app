@@ -7,11 +7,13 @@ import 'api_quran.dart';
 
 class HalamanBacaan extends StatefulWidget {
   final String namaSurah;
+  final int? nomorSurah;
  final int? nomorAyatTujuan;
 
   const HalamanBacaan({
     super.key,
     required this.namaSurah,
+     this.nomorSurah,
      this.nomorAyatTujuan,
   });
 
@@ -65,12 +67,10 @@ void menujuAyatTujuan(int jumlahAyat) {
 
 
 Future<void> muatDataSurahApi() async {
-
-  final surah = dataSurah.firstWhere(
-    (surah) => surah['nama'] == widget.namaSurah,
-  );
-
-  final nomorSurah = surah['nomor'] as int;
+  final nomorSurah = widget.nomorSurah ??
+      dataSurah.firstWhere(
+        (surah) => surah['nama'] == widget.namaSurah,
+      )['nomor'] as int;
 
   setState(() {
     sedangMemuat = true;

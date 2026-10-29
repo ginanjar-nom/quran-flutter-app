@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'halaman_bacaan.dart';
 import 'data_surah.dart';
+import 'dart:convert';
 
 
 
@@ -29,7 +30,13 @@ Future<void> muatFavorit() async {
   final daftar = prefs.getStringList('surahFavorit') ?? [];
   final Map<String, int> penanda = {};
 
-  for (final surah in dataSurah) {
+  final dataTersimpan = prefs.getString('daftar_surah');
+
+final List<dynamic> semuaSurah = dataTersimpan == null
+    ? dataSurah
+    : jsonDecode(dataTersimpan) as List<dynamic>;
+
+for (final surah in semuaSurah) {
     final nama = surah['nama'] as String;
     final nomor = prefs.getInt('penanda_$nama');
 

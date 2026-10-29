@@ -4,6 +4,7 @@ import 'halaman_bacaan.dart';
 import 'data_surah.dart';
 import 'halaman_bookmark.dart';
 import 'api_quran.dart';
+import 'dart:convert';
 
 
 void main() {
@@ -118,12 +119,112 @@ Future<void> muatSurahTerakhir() async {
 
 String kataPencarian = '';
   
-   
+   List<Map<String, dynamic>> daftarSurah = dataSurah;
+
+   int progresUnduh = 0;
+   bool sedangMengunduh = false;
+
+
+Future<void> muatDaftarSurah() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  // Muat daftar yang tersimpan agar bisa digunakan offline.
+  final dataTersimpan = prefs.getString('daftar_surah');
+
+  if (dataTersimpan != null) {
+    final dataLokal =
+        (jsonDecode(dataTersimpan) as List<dynamic>)
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+
+    if (!mounted) return;
+
+    setState(() {
+      daftarSurah = dataLokal;
+    });
+  }
+    
+  // Perbarui daftar jika internet tersedia.
+  try {
+    final hasil = await ambilDaftarSurah();
+
+    await prefs.setString('daftar_surah', jsonEncode(hasil));
+
+    if (!mounted) return;
+
+    setState(() {
+      daftarSurah = hasil;
+    });
+  } catch (e) {
+    debugPrint('Menggunakan daftar surah tersimpan: $e');
+  }
+}
+
+
+  
+Future<void> simpanDataSurahOffline(
+  int nomorSurah,
+  Map<String, dynamic> data,
+) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  await prefs.setString(
+    'data_surah_$nomorSurah',
+    jsonEncode(data),
+  );
+}
+
+
+Future<void> mulaiUnduhSemuaSurah() async {
+  setState(() {
+    sedangMengunduh = true;
+    progresUnduh = 0;
+  });
+
+  try {
+    await unduhSemuaSurah(
+      simpanData: simpanDataSurahOffline,
+      saatProgres: (selesai) {
+        if (!mounted) return;
+
+        setState(() {
+          progresUnduh = selesai;
+        });
+      },
+    );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Semua 114 surah berhasil disimpan untuk offline.'),
+      ),
+    );
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Unduhan gagal: $e'),
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        sedangMengunduh = false;
+      });
+    }
+  }
+}
+
+
+
 @override
 void initState() {
   super.initState();
   muatSurahTerakhir();
    muatFavorit();
+   muatDaftarSurah();
 }
 
   @override
@@ -139,6 +240,11 @@ return Scaffold(
     backgroundColor: Theme.of(context).colorScheme.inversePrimary,
     title: Text(widget.title),
     actions: [
+      IconButton(
+       icon: const Icon(Icons.download),
+       tooltip: 'Unduh semua surah untuk offline',
+        onPressed: sedangMengunduh ? null : mulaiUnduhSemuaSurah,
+        ),
       IconButton(
         icon: const Icon(Icons.bookmarks_outlined),
         tooltip: 'Bookmark Saya',
@@ -188,7 +294,23 @@ return Scaffold(
               kataPencarian = value;
                      });
                    },
-                  )   ,
+                  ) 
+                   ,
+                  if (sedangMengunduh) ...[
+                  Padding(
+                  padding: const EdgeInsets.all(12),
+                   child: Column(
+                  children: [
+                   LinearProgressIndicator(
+                  value: progresUnduh / 114,
+                   ),
+                   const SizedBox(height: 8),
+                  Text('Mengunduh surah: $progresUnduh dari 114'),
+                           ],
+                         ),
+                        ),
+                       ],
+                   
                    const SizedBox(height: 20),
                  Padding(
                    padding: const EdgeInsets.all(12),
@@ -222,6 +344,9 @@ context,
 MaterialPageRoute(
 builder: (context) => HalamanBacaan(
 namaSurah: nama,
+nomorSurah: daftarSurah.firstWhere(
+  (item) => item['nama'] == nama,
+)['nomor'] as int,
 ),
 ),
 );
@@ -240,35 +365,8 @@ namaSurah: nama,
 
 const SizedBox(height: 12),
 
-ElevatedButton(
-  onPressed: () async {
-    try {
-      final hasil = await ambilDataSurah(2);
 
-      if (!context.mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Berhasil: ${hasil["namaLatin"]}'),
-        ),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengambil data: $e'),
-        ),
-      );
-    }
-  },
-  child: const Text('Tes API Al-Baqarah'),
-),
-
-const SizedBox(height: 12),
-
-
-...dataSurah
+...daftarSurah
     .where((surah) {
       return surah['nama']
           .toLowerCase()
@@ -295,6 +393,7 @@ const SizedBox(height: 12),
     MaterialPageRoute(
       builder: (context) => HalamanBacaan(
         namaSurah: nama,
+         nomorSurah: surah['nomor'] as int,
       ),
     ),
   );
