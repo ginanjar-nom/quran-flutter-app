@@ -17,6 +17,7 @@ class HalamanBookmark extends StatefulWidget {
 class _HalamanBookmarkState extends State<HalamanBookmark> {
   List<String> daftarFavorit = [];
   Map<String, int> penandaAyat = {};
+  Map<String, int> nomorSurahMap = {};
   @override
 void initState() {
   super.initState();
@@ -29,6 +30,7 @@ Future<void> muatFavorit() async {
 
   final daftar = prefs.getStringList('surahFavorit') ?? [];
   final Map<String, int> penanda = {};
+  final Map<String, int> nomorSurah = {};
 
   final dataTersimpan = prefs.getString('daftar_surah');
 
@@ -39,7 +41,7 @@ final List<dynamic> semuaSurah = dataTersimpan == null
 for (final surah in semuaSurah) {
     final nama = surah['nama'] as String;
     final nomor = prefs.getInt('penanda_$nama');
-
+    nomorSurah[nama] = surah['nomor'] as int;
     if (nomor != null) {
       penanda[nama] = nomor;
     }
@@ -50,6 +52,7 @@ for (final surah in semuaSurah) {
   setState(() {
     daftarFavorit = daftar;
     penandaAyat = penanda;
+    nomorSurahMap = nomorSurah;
   });
 }
 
@@ -96,6 +99,7 @@ body: ListView(
               MaterialPageRoute(
                 builder: (context) => HalamanBacaan(
                    namaSurah: namaSurah,
+                    nomorSurah: nomorSurahMap[namaSurah],
                   
                 
                 ),
@@ -135,6 +139,7 @@ body: ListView(
               MaterialPageRoute(
                 builder: (context) => HalamanBacaan(
                     namaSurah: penanda.key,
+                     nomorSurah: nomorSurahMap[penanda.key],
                     nomorAyatTujuan: penanda.value,
 
                 ),

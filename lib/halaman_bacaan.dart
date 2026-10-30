@@ -175,19 +175,20 @@ if (dataSurahApi != null) {
         daftarAyat = dataAyatBaqarah;
        } else {
        daftarAyat = dataAyatFatihah;
+       }
        
        if (!sudahMenujuAyat &&
-    widget.nomorAyatTujuan != null &&
-    (widget.namaSurah != 'Al-Baqarah' ||
-        dataSurahApi != null)) {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (!mounted || sudahMenujuAyat) return;
+       widget.nomorAyatTujuan != null &&
+       dataSurahApi != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || sudahMenujuAyat) return;
 
-    sudahMenujuAyat = true;
-    menujuAyatTujuan(daftarAyat.length);
-    });
-          }}
+        sudahMenujuAyat = true;
+        menujuAyatTujuan(daftarAyat.length);
+        });
+         }
 
+       
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.namaSurah),
