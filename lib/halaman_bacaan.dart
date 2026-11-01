@@ -24,7 +24,11 @@ class HalamanBacaan extends StatefulWidget {
 }
 
 class _HalamanBacaanState extends State<HalamanBacaan> {
+static const String teksBasmalah =
+    'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
+
 int? ayatTerakhir;
+
 
 Map<String, dynamic>? dataSurahApi;
 bool sedangMemuat = false;
@@ -236,13 +240,36 @@ if (dataSurahApi != null) {
         title: Text(widget.namaSurah),
       ),
        
-       body: ScrollablePositionedList.builder(
+       body: Column(
+        children: [
+        
+    Expanded(
+      child: ScrollablePositionedList.builder(
         itemScrollController: itemScrollController,
         itemPositionsListener: itemPositionsListener,
         padding: const EdgeInsets.all(24),
-       itemCount: daftarAyat.length,
-       itemBuilder: (context, index) {
-       final ayat = daftarAyat[index];
+         itemCount: daftarAyat.length +
+         (widget.namaSurah != 'Al-Fatihah' &&
+          widget.namaSurah != 'At-Taubah' ? 1 : 0),
+        itemBuilder: (context, index) {
+  final adaBasmalah =
+      widget.namaSurah != 'Al-Fatihah' &&
+      widget.namaSurah != 'At-Taubah';
+
+  if (adaBasmalah && index == 0) {
+        return Padding(
+         padding: const EdgeInsets.only(bottom: 24),
+          child: Text(
+          teksBasmalah,
+           textAlign: TextAlign.center,
+          textDirection: TextDirection.rtl,
+          style: const TextStyle(fontSize: 30),
+      ),
+    );
+  }
+
+  final indeksAyat = adaBasmalah ? index - 1 : index;
+  final ayat = daftarAyat[indeksAyat];
 
      return Column(
         children: [
@@ -283,10 +310,13 @@ Row(
                       ),
                     ),
                     const SizedBox(height: 32),
-  ],
+                    ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
-  },
-),
-);
-}
+  }
 }
