@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'data_surah.dart';
 import 'api_quran.dart';
+import 'data_quran_lokal.dart';
 
 class HalamanBacaan extends StatefulWidget {
   final String namaSurah;
@@ -49,13 +50,19 @@ void initState() {
 void menujuAyatTujuan(int jumlahAyat) {
   final nomor = widget.nomorAyatTujuan;
 
-  if (nomor == null) return;
+  if (nomor == null || nomor < 1 || nomor > jumlahAyat) {
+    return;
+  }
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (!mounted) return;
-    if (!itemScrollController.isAttached) return;
+    if (!mounted || sudahMenujuAyat) return;
 
-    if (nomor < 1 || nomor > jumlahAyat) return;
+    if (!itemScrollController.isAttached) {
+      menujuAyatTujuan(jumlahAyat);
+      return;
+    }
+
+    sudahMenujuAyat = true;
 
     itemScrollController.scrollTo(
       index: nomor - 1,
@@ -64,7 +71,6 @@ void menujuAyatTujuan(int jumlahAyat) {
     );
   });
 }
-
 
 Future<void> muatDataSurahApi() async {
   final nomorSurah = widget.nomorSurah ??
@@ -77,45 +83,73 @@ Future<void> muatDataSurahApi() async {
     pesanError = null;
   });
 
-  try {  
+  final prefs = await SharedPreferences.getInstance();
+
+  // 1. Periksa cache SharedPreferences.
+  final dataTersimpan =
+      prefs.getString('data_surah_$nomorSurah');
+
+  if (dataTersimpan != null) {
+    try {
+      final dataCache =
+          jsonDecode(dataTersimpan) as Map<String, dynamic>;
+
+      if (!mounted) return;
+
+      setState(() {
+        dataSurahApi = dataCache;
+        sedangMemuat = false;
+      });
+    } catch (e) {
+      debugPrint('Cache tidak dapat dibaca: $e');
+    }
+  }
+
+  // 2. Jika cache belum tersedia, gunakan JSON bawaan.
+  if (dataSurahApi == null) {
+    try {
+      final dataLokal =
+          await ambilDataSurahLokal(nomorSurah);
+
+      if (!mounted) return;
+
+      setState(() {
+        dataSurahApi = dataLokal;
+        sedangMemuat = false;
+      });
+    } catch (e) {
+      debugPrint('Data lokal tidak dapat dibaca: $e');
+    }
+  }
+
+  // 3. Coba perbarui data melalui API.
+  try {
     final hasil = await ambilDataSurah(nomorSurah);
 
-    if (!mounted) return;
-    final prefs = await SharedPreferences.getInstance();
-
     await prefs.setString(
-     'data_surah_$nomorSurah',
-     jsonEncode(hasil),
+      'data_surah_$nomorSurah',
+      jsonEncode(hasil),
     );
 
-   if (!mounted) return;
-   
+    if (!mounted) return;
+
     setState(() {
       dataSurahApi = hasil;
       sedangMemuat = false;
+      pesanError = null;
     });
-   } catch (e) {
-    final prefs = await SharedPreferences.getInstance();
-
-    final dataTersimpan =
-        prefs.getString('data_surah_$nomorSurah');
-        debugPrint('Cache surah $nomorSurah ditemukan: ${dataTersimpan != null}');
+  } catch (e) {
     if (!mounted) return;
 
-    setState(() {
-      if (dataTersimpan != null) {
-        dataSurahApi =
-            jsonDecode(dataTersimpan) as Map<String, dynamic>;
-        pesanError = null;
-      } else {
+    // Jika semua sumber data gagal, tampilkan pesan error.
+    if (dataSurahApi == null) {
+      setState(() {
         pesanError = e.toString();
-      }
-
-      sedangMemuat = false;
-    });
+        sedangMemuat = false;
+      });
+    }
   }
 }
-
 
 
 Future<void> muatPenandaAyat() async {
@@ -155,7 +189,20 @@ Future<void> simpanPenandaAyat(int nomorAyat) async {
   @override
   Widget build(BuildContext context) {
     // Memilih data ayat berdasarkan nama surah.
-
+     if (dataSurahApi == null) {
+       return Scaffold(
+         appBar: AppBar(
+         title: Text(widget.namaSurah),
+        ),
+          body: Center(
+         child: sedangMemuat
+          ? const CircularProgressIndicator()
+          : Text(
+              pesanError ?? 'Data surah tidak tersedia.',
+            ),
+       ),
+     );
+    }
   
 final List<Map<String, dynamic>> daftarAyat;
 
@@ -176,17 +223,12 @@ if (dataSurahApi != null) {
        } else {
        daftarAyat = dataAyatFatihah;
        }
-       
-       if (!sudahMenujuAyat &&
-       widget.nomorAyatTujuan != null &&
+      
+        if (!sudahMenujuAyat &&
+        widget.nomorAyatTujuan != null &&
        dataSurahApi != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || sudahMenujuAyat) return;
-
-        sudahMenujuAyat = true;
-        menujuAyatTujuan(daftarAyat.length);
-        });
-         }
+      menujuAyatTujuan(daftarAyat.length);
+      }
 
        
     return Scaffold(

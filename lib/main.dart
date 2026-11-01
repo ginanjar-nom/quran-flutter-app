@@ -19,24 +19,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Al-Qur'an Digital",
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.blueGrey),
-      ),
+     theme: ThemeData(
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: const Color(0xFF1B6B50),
+  ),
+  useMaterial3: true,
+),
       home: const MyHomePage(title: "Al-Qur'an Digital"),
     );
   }
@@ -261,8 +249,9 @@ return Scaffold(
   ),
  // than having to individually change instances of widgets.
   
-           body: SingleChildScrollView(
-            child: Column(
+      body: SingleChildScrollView(
+       padding: const EdgeInsets.all(16),
+       child: Column(
           // Column is also a layout widget. It takes a list of children and
           // arranges them vertically. By default, it sizes itself to fit its
           // children horizontally, and tries to be as tall as its parent.
@@ -278,10 +267,38 @@ return Scaffold(
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.start,
 
-          children: [
-            const Text("Assalamu'alaikum",style:TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
-            const Text("Selamat datang di Al-Qur'an Digital"),
-            const Text("Temukan dan baca surah Al-Qur'an"),
+     children: [
+      
+      Container(
+  width: double.infinity,
+  padding: const EdgeInsets.all(20),
+  decoration: BoxDecoration(
+    color: Theme.of(context).colorScheme.primary,
+    borderRadius: BorderRadius.circular(16),
+  ),
+  child: const Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        "Assalamu'alaikum",
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      SizedBox(height: 8),
+      Text(
+        "Selamat datang di Al-Qur'an Digital",
+        style: TextStyle(color: Colors.white),
+      ),
+      Text(
+        "Temukan dan baca surah Al-Qur'an",
+        style: TextStyle(color: Colors.white70),
+      ),
+    ],
+  ),
+),
             TextField(
                controller: pencarianController,
                decoration: const InputDecoration(
@@ -366,69 +383,83 @@ nomorSurah: daftarSurah.firstWhere(
 const SizedBox(height: 12),
 
 
-...daftarSurah
-    .where((surah) {
+LayoutBuilder(
+  builder: (context, constraints) {
+    final surahTersaring = daftarSurah.where((surah) {
       return surah['nama']
           .toLowerCase()
           .contains(kataPencarian.toLowerCase());
-               })
-     .map((surah) {
+    }).toList();
 
-  return Card(
-    child: ListTile(
- onTap: () async {
-  final nama = surah['nama'] as String;
+    final jumlahKolom = constraints.maxWidth >= 900
+        ? 3
+        : constraints.maxWidth >= 600
+            ? 2
+            : 1;
 
-  setState(() {
-    surahTerakhir = nama;
-  });
-
-
-  await simpanSurahTerakhir(nama);
-
-  if (!context.mounted) return;
-
-  await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => HalamanBacaan(
-        namaSurah: nama,
-         nomorSurah: surah['nomor'] as int,
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: surahTersaring.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: jumlahKolom,
+        childAspectRatio: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
       ),
-    ),
-  );
+      itemBuilder: (context, index) {
+        final surah = surahTersaring[index];
 
-  await muatSurahTerakhir();
-},
-      leading: CircleAvatar(child: Text("${surah['nomor']}")),
-      title: Text(surah['nama']),
-      subtitle: Text("${surah['jumlahAyat']} ayat"),
-      
-trailing: Row(
-  mainAxisSize: MainAxisSize.min,
-  children: [
-    
-IconButton(
-  icon: Icon(
-    surahFavorit.contains(surah['nama'])
-        ? Icons.favorite
-        : Icons.favorite_border,
-    color: Colors.red,
-  ),
-  onPressed: () {
-    ubahFavorit(surah['nama'] as String);
+        return Card(
+          child: ListTile(
+            onTap: () async {
+              final nama = surah['nama'] as String;
+
+              setState(() {
+                surahTerakhir = nama;
+              });
+
+              await simpanSurahTerakhir(nama);
+
+              if (!context.mounted) return;
+
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HalamanBacaan(
+                    namaSurah: nama,
+                    nomorSurah: surah['nomor'] as int,
+                  ),
+                ),
+              );
+
+              await muatSurahTerakhir();
+            },
+            leading: CircleAvatar(
+              child: Text("${surah['nomor']}"),
+            ),
+            title: Text(surah['nama']),
+            subtitle: Text("${surah['jumlahAyat']} ayat"),
+            trailing: IconButton(
+              icon: Icon(
+                surahFavorit.contains(surah['nama'])
+                    ? Icons.favorite
+                    : Icons.favorite_border,
+                color: Colors.red,
+              ),
+              onPressed: () {
+                ubahFavorit(surah['nama'] as String);
+              },
+              tooltip: 'Surah favorit',
+            ),
+          ),
+        );
+      },
+    );
   },
-  tooltip: 'Surah favorit',
 ),
-
-    const Icon(Icons.chevron_right),
-  ],
-),
-
-    ),
-  );
-})],
-        ),
+     
+       ] ),
       ),
     );
   }
