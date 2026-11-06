@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -35,7 +36,17 @@ bool sedangMemuat = false;
 String? pesanError;
 
 bool sudahMenujuAyat = false;
+final AudioPlayer audioPlayer = AudioPlayer();
+String qariTerpilih = '05';
 
+final Map<String, String> daftarQari = { 
+  '05': 'Misyari Rasyid Al-Afasi',
+  '03': 'Abdurrahman as-Sudais',
+  '04': 'Ibrahim Al-Dossari',
+  '02': 'Abdulmuhsin Al-Qasim',
+  '06': 'Yasser Al-Dosari',
+
+   };
 final ItemScrollController itemScrollController =
     ItemScrollController();
 
@@ -171,6 +182,7 @@ Future<void> muatPenandaAyat() async {
 
 
 Future<void> simpanPenandaAyat(int nomorAyat) async {
+  
   final prefs = await SharedPreferences.getInstance();
 
   final kunci = 'penanda_${widget.namaSurah}';
@@ -189,15 +201,46 @@ Future<void> simpanPenandaAyat(int nomorAyat) async {
   });
 }
 
+ Future<void> putarAudioAyat(Map<String, dynamic> ayat) async {
+  final audio = ayat['audio'] as Map<String, dynamic>;
+  final url = audio[qariTerpilih] as String;
+
+  try {
+    await audioPlayer.setUrl(url);
+    await audioPlayer.play();
+  } catch (e) {
+    debugPrint('Gagal memutar audio: $e');
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
     // Memilih data ayat berdasarkan nama surah.
      if (dataSurahApi == null) {
        return Scaffold(
-         appBar: AppBar(
-         title: Text(widget.namaSurah),
-        ),
+        appBar: AppBar(
+  title: Text(widget.namaSurah),
+  actions: [
+    PopupMenuButton<String>(
+      tooltip: 'Pilih qari',
+      icon: const Icon(Icons.record_voice_over),
+      onSelected: (kode) {
+        setState(() {
+          qariTerpilih = kode;
+        });
+      },
+      itemBuilder: (context) {
+        return daftarQari.entries.map((entry) {
+          return PopupMenuItem<String>(
+            value: entry.key,
+            child: Text(entry.value),
+          );
+        }).toList();
+      },
+    ),
+  ],
+),
           body: Center(
          child: sedangMemuat
           ? const CircularProgressIndicator()
@@ -220,6 +263,7 @@ if (dataSurahApi != null) {
       'nomor': ayat['nomorAyat'],
       'arab': ayat['teksArab'],
       'terjemahan': ayat['teksIndonesia'],
+      'audio': ayat['audio'],
       };
        }).toList();
      } else if (widget.namaSurah == 'Al-Baqarah') {
@@ -236,9 +280,33 @@ if (dataSurahApi != null) {
 
        
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.namaSurah),
-      ),
+     appBar: AppBar(
+  title: Text(widget.namaSurah),
+  actions: [
+    PopupMenuButton<String>(
+      tooltip: 'Pilih qari',
+      icon: const Icon(Icons.record_voice_over),
+      onSelected: (kode) {
+        setState(() {
+          qariTerpilih = kode;
+        });
+      },
+      itemBuilder: (context) => daftarQari.entries.map((entry) {
+        return PopupMenuItem<String>(
+          value: entry.key,
+          child: Text(
+            entry.value,
+            style: TextStyle(
+              fontWeight: qariTerpilih == entry.key
+                  ? FontWeight.bold
+                  : FontWeight.normal,
+            ),
+          ),
+        );
+      }).toList(),
+    ),
+  ],
+),
        
        body: Column(
         children: [
@@ -256,17 +324,24 @@ if (dataSurahApi != null) {
       widget.namaSurah != 'Al-Fatihah' &&
       widget.namaSurah != 'At-Taubah';
 
-  if (adaBasmalah && index == 0) {
-        return Padding(
-         padding: const EdgeInsets.only(bottom: 24),
-          child: Text(
-          teksBasmalah,
-           textAlign: TextAlign.center,
-          textDirection: TextDirection.rtl,
-          style: const TextStyle(fontSize: 30),
+    if (adaBasmalah && index == 0) {
+     return Column(
+      children: [
+      Text(
+        teksBasmalah,
+        textAlign: TextAlign.center,
+        textDirection: TextDirection.rtl,
+        style: const TextStyle(fontSize: 30),
       ),
-    );
-  }
+      IconButton(
+        icon: const Icon(Icons.play_circle_outline),
+       onPressed: null,
+        tooltip: 'Audio Basmalah belum tersedia',
+      ),
+      const SizedBox(height: 24),
+    ],
+  );
+}
 
   final indeksAyat = adaBasmalah ? index - 1 : index;
   final ayat = daftarAyat[indeksAyat];
@@ -287,6 +362,15 @@ Row(
   mainAxisAlignment: MainAxisAlignment.center,
   children: [
     Text('Ayat ${ayat['nomor']}'),
+    IconButton(
+      icon: const Icon(Icons.play_circle_outline),
+      onPressed: () {
+        putarAudioAyat(ayat);
+      },
+      tooltip: 'Putar audio ayat',
+    ),
+    
+    
     IconButton(
       icon: Icon(
         ayatTerakhir == ayat['nomor']
