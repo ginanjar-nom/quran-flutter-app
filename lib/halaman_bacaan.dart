@@ -40,6 +40,9 @@ bool sudahMenujuAyat = false;
 final AudioPlayer audioPlayer = AudioPlayer();
 String qariTerpilih = '05';
 bool sedangAutoPlay = false;
+String? urlAutoPlayTersimpan;
+Duration posisiAutoPlayTersimpan = Duration.zero;
+int? nomorAyatSedangDiputar;
 int indeksAutoPlay = 0;
 StreamSubscription<PlayerState>? listenerAudio;
 List<Map<String, dynamic>> daftarAyat = [];
@@ -64,6 +67,9 @@ void initState() {
   super.initState();
 
 listenerAudio = audioPlayer.playerStateStream.listen((state) {
+  if (mounted) {
+    setState(() {});
+  }
   if (state.processingState == ProcessingState.completed &&
       sedangAutoPlay) {
     indeksAutoPlay++;
@@ -218,13 +224,27 @@ Future<void> simpanPenandaAyat(int nomorAyat) async {
     Map<String, dynamic> ayat, {
     bool dariAutoPlay = false,
   }) async {
-  if (!dariAutoPlay && sedangAutoPlay) {
-    setState(() {
-      sedangAutoPlay = false;
-    });
-  }
+ if (!dariAutoPlay && sedangAutoPlay) {
+  final ayatAutoPlay = daftarAyat[indeksAutoPlay];
+  final audioAutoPlay =
+      ayatAutoPlay['audio'] as Map<String, dynamic>;
+
+  urlAutoPlayTersimpan =
+      audioAutoPlay[qariTerpilih] as String;
+
+  posisiAutoPlayTersimpan = audioPlayer.position;
+
+  setState(() {
+    sedangAutoPlay = false;
+  });
+}
   final audio = ayat['audio'] as Map<String, dynamic>;
   final url = audio[qariTerpilih] as String;
+    if (mounted) {
+       setState(() {
+        nomorAyatSedangDiputar = ayat['nomor'] as int;
+  });
+}
 
   try {
     await audioPlayer.setUrl(url);
@@ -316,7 +336,7 @@ if (dataSurahApi != null) {
      appBar: AppBar(
       title: Text(widget.namaSurah),
        actions: [
-  IconButton(
+   IconButton(
   tooltip: sedangAutoPlay ? 'Jeda Auto Play' : 'Mulai Auto Play',
   icon: Icon(
     sedangAutoPlay ? Icons.pause_circle : Icons.play_circle,
@@ -332,7 +352,17 @@ if (dataSurahApi != null) {
         sedangAutoPlay = true;
       });
 
-      if (audioPlayer.processingState == ProcessingState.ready &&
+      if (urlAutoPlayTersimpan != null) {
+        await audioPlayer.setUrl(
+          urlAutoPlayTersimpan!,
+          initialPosition: posisiAutoPlayTersimpan,
+        );
+
+        urlAutoPlayTersimpan = null;
+        posisiAutoPlayTersimpan = Duration.zero;
+
+        await audioPlayer.play();
+      } else if (audioPlayer.processingState == ProcessingState.ready &&
           audioPlayer.position > Duration.zero) {
         await audioPlayer.play();
       } else {
@@ -364,7 +394,7 @@ if (dataSurahApi != null) {
         );
       }).toList(),
     ),
-  ],
+  ]
 ),
        
        body: Column(
@@ -422,10 +452,32 @@ Row(
   children: [
     Text('Ayat ${ayat['nomor']}'),
     IconButton(
-      icon: const Icon(Icons.play_circle_outline),
-      onPressed: () {
-        putarAudioAyat(ayat);
-      },
+     icon: nomorAyatSedangDiputar == ayat['nomor'] &&
+        (audioPlayer.processingState == ProcessingState.loading ||
+         audioPlayer.processingState == ProcessingState.buffering)
+    ? const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      )
+    : Icon(
+        nomorAyatSedangDiputar == ayat['nomor'] &&
+                audioPlayer.playing
+            ? Icons.pause_circle
+            : Icons.play_circle_outline,
+      ),
+    onPressed: () async {
+    if (nomorAyatSedangDiputar == ayat['nomor'] &&
+      audioPlayer.playing) {
+     await audioPlayer.pause();
+  } else if (nomorAyatSedangDiputar == ayat['nomor'] &&
+      audioPlayer.processingState == ProcessingState.ready &&
+      audioPlayer.position > Duration.zero) {
+    await audioPlayer.play();
+  } else {
+    await putarAudioAyat(ayat);
+  }
+},
       tooltip: 'Putar audio ayat',
     ),
     
