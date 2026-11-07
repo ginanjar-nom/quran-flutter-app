@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +39,11 @@ String? pesanError;
 bool sudahMenujuAyat = false;
 final AudioPlayer audioPlayer = AudioPlayer();
 String qariTerpilih = '05';
+bool sedangAutoPlay = false;
+int indeksAutoPlay = 0;
+StreamSubscription<PlayerState>? listenerAudio;
+List<Map<String, dynamic>> daftarAyat = [];
+
 
 final Map<String, String> daftarQari = { 
   '05': 'Misyari Rasyid Al-Afasi',
@@ -54,10 +60,17 @@ final ItemPositionsListener itemPositionsListener =
     ItemPositionsListener.create();
 
  @override
-
- @override
 void initState() {
   super.initState();
+
+listenerAudio = audioPlayer.playerStateStream.listen((state) {
+  if (state.processingState == ProcessingState.completed &&
+      sedangAutoPlay) {
+    indeksAutoPlay++;
+    putarAyatBerikutnya();
+  }
+});
+
   muatPenandaAyat();
   muatDataSurahApi();
 }
@@ -201,7 +214,15 @@ Future<void> simpanPenandaAyat(int nomorAyat) async {
   });
 }
 
- Future<void> putarAudioAyat(Map<String, dynamic> ayat) async {
+  Future<void> putarAudioAyat(
+    Map<String, dynamic> ayat, {
+    bool dariAutoPlay = false,
+  }) async {
+  if (!dariAutoPlay && sedangAutoPlay) {
+    setState(() {
+      sedangAutoPlay = false;
+    });
+  }
   final audio = ayat['audio'] as Map<String, dynamic>;
   final url = audio[qariTerpilih] as String;
 
@@ -213,6 +234,20 @@ Future<void> simpanPenandaAyat(int nomorAyat) async {
   }
 }
 
+Future<void> putarAyatBerikutnya() async {
+  if (!sedangAutoPlay || !mounted) return;
+
+  if (indeksAutoPlay >= daftarAyat.length) {
+    setState(() {
+      sedangAutoPlay = false;
+      indeksAutoPlay = 0;
+    });
+    return;
+  }
+
+  final ayat = daftarAyat[indeksAutoPlay];
+  await putarAudioAyat(ayat, dariAutoPlay: true);
+}
 
   @override
   Widget build(BuildContext context) {
@@ -251,8 +286,6 @@ Future<void> simpanPenandaAyat(int nomorAyat) async {
      );
     }
   
-final List<Map<String, dynamic>> daftarAyat;
-
 if (dataSurahApi != null) {
 
     final daftarAyatApi =
@@ -281,8 +314,34 @@ if (dataSurahApi != null) {
        
     return Scaffold(
      appBar: AppBar(
-  title: Text(widget.namaSurah),
-  actions: [
+      title: Text(widget.namaSurah),
+       actions: [
+  IconButton(
+  tooltip: sedangAutoPlay ? 'Jeda Auto Play' : 'Mulai Auto Play',
+  icon: Icon(
+    sedangAutoPlay ? Icons.pause_circle : Icons.play_circle,
+  ),
+  onPressed: () async {
+    if (sedangAutoPlay) {
+      setState(() {
+        sedangAutoPlay = false;
+      });
+      await audioPlayer.pause();
+    } else {
+      setState(() {
+        sedangAutoPlay = true;
+      });
+
+      if (audioPlayer.processingState == ProcessingState.ready &&
+          audioPlayer.position > Duration.zero) {
+        await audioPlayer.play();
+      } else {
+        await putarAyatBerikutnya();
+      }
+    }
+  },
+),
+
     PopupMenuButton<String>(
       tooltip: 'Pilih qari',
       icon: const Icon(Icons.record_voice_over),
@@ -402,5 +461,12 @@ Row(
         ],
       ),
     );
+    }
+
+        @override
+           void dispose() {
+           listenerAudio?.cancel();
+           audioPlayer.dispose();
+           super.dispose();
   }
 }
