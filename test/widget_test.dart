@@ -20,6 +20,17 @@ test('Seluruh 114 surah dapat dimuat', () async {
       surah['jumlahAyat'],
       reason: 'Jumlah ayat surah nomor $nomor tidak sesuai',
     );
+        final audioFull = surah['audioFull'] as Map<String, dynamic>;
+
+    for (final kodeQari in ['02', '03', '04', '05', '06']) {
+      final urlAudioFull = audioFull[kodeQari] as String?;
+
+      expect(
+        urlAudioFull?.trim().isNotEmpty ?? false,
+        isTrue,
+        reason: 'Audio penuh qari $kodeQari kosong pada surah $nomor',
+      );
+    }
 
     for (int indeks = 0;
         indeks < (surah['ayat'] as List).length;
