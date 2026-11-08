@@ -12,7 +12,19 @@ void main() {
        (surah['ayat'] as List).length,
         surah['jumlahAyat'],
         reason: 'Jumlah ayat surah nomor $nomor tidak sesuai',
+ );
+   for (int indeks = 0;
+    indeks < (surah['ayat'] as List).length;
+    indeks++) {
+  final ayat = surah['ayat'][indeks];
+
+     expect(
+        ayat['nomorAyat'],
+        indeks + 1,
+        reason:
+        'Nomor ayat ${indeks + 1} pada surah $nomor tidak sesuai',
   );
+}
       expect(
         surah['nomor'],
         nomor,
