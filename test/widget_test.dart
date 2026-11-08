@@ -18,6 +18,18 @@ void main() {
     indeks++) {
   final ayat = surah['ayat'][indeks];
 
+  expect(
+     (ayat['teksArab'] as String).trim().isNotEmpty,
+     isTrue,
+     reason: 'Teks Arab kosong pada surah $nomor ayat ${indeks + 1}',
+);
+
+   expect(
+     (ayat['teksIndonesia'] as String).trim().isNotEmpty,
+      isTrue,
+      reason: 'Terjemahan kosong pada surah $nomor ayat ${indeks + 1}',
+);
+
      expect(
         ayat['nomorAyat'],
         indeks + 1,
