@@ -3,14 +3,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter_firstaplication/main.dart';
 import 'package:flutter_firstaplication/data_quran_lokal.dart';
-void main() {
-    test('Data lokal dapat memuat surah pertama dan terakhir', () async {
-    final surahPertama = await ambilDataSurahLokal(1);
-    final surahTerakhir = await ambilDataSurahLokal(114);
 
-    expect(surahPertama['nomor'], 1);
-    expect(surahTerakhir['nomor'], 114);
+void main() {
+  test('Seluruh 114 surah dapat dimuat', () async {
+    for (int nomor = 1; nomor <= 114; nomor++) {
+      final surah = await ambilDataSurahLokal(nomor);
+
+      expect(
+        surah['nomor'],
+        nomor,
+        reason: 'Surah nomor $nomor gagal dimuat',
+      );
+    }
   });
+
   testWidgets('Halaman utama Al-Qur’an Digital tampil',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
