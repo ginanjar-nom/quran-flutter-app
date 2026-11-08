@@ -7,8 +7,12 @@ import 'package:flutter_firstaplication/data_quran_lokal.dart';
 void main() {
   test('Seluruh 114 surah dapat dimuat', () async {
     for (int nomor = 1; nomor <= 114; nomor++) {
-      final surah = await ambilDataSurahLokal(nomor);
-
+    final surah = await ambilDataSurahLokal(nomor);
+     expect(
+       (surah['ayat'] as List).length,
+        surah['jumlahAyat'],
+        reason: 'Jumlah ayat surah nomor $nomor tidak sesuai',
+  );
       expect(
         surah['nomor'],
         nomor,
