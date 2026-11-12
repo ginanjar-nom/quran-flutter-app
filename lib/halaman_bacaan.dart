@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +27,7 @@ class HalamanBacaan extends StatefulWidget {
 
 class _HalamanBacaanState extends State<HalamanBacaan> {
 static const String teksBasmalah =
-    'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
+    'Ø¨ÙØ³Ù’Ù…Ù Ø§Ù„Ù„ÙŽÙ‘Ù‡Ù Ø§Ù„Ø±ÙŽÙ‘Ø­Ù’Ù…ÙŽÙ°Ù†Ù Ø§Ù„Ø±ÙŽÙ‘Ø­ÙÙŠÙ…Ù';
 
 int? ayatTerakhir;
 
@@ -40,6 +40,7 @@ bool sudahMenujuAyat = false;
 final AudioPlayer audioPlayer = AudioPlayer();
 String qariTerpilih = '05';
 bool sedangAutoPlay = false;
+bool sedangAudioSurah = false;
 String? urlAutoPlayTersimpan;
 Duration posisiAutoPlayTersimpan = Duration.zero;
 int? nomorAyatSedangDiputar;
@@ -70,10 +71,15 @@ listenerAudio = audioPlayer.playerStateStream.listen((state) {
   if (mounted) {
     setState(() {});
   }
-  if (state.processingState == ProcessingState.completed &&
-      sedangAutoPlay) {
+  if (state.processingState == ProcessingState.completed) {
+   if (sedangAudioSurah) {
+    setState(() {
+      sedangAudioSurah = false;
+    });
+   } else if (sedangAutoPlay) {
     indeksAutoPlay++;
     putarAyatBerikutnya();
+    }
   }
 });
 
@@ -220,6 +226,50 @@ Future<void> simpanPenandaAyat(int nomorAyat) async {
   });
 }
 
+Future<void> putarAudioSurah() async {
+  if (sedangAudioSurah) {
+    if (audioPlayer.playing) {
+      await audioPlayer.pause();
+    } else {
+      await audioPlayer.play();
+    }
+    return;
+  }
+
+  final audioFull =
+      dataSurahApi?['audioFull'] as Map<String, dynamic>?;
+
+  final url = audioFull?[qariTerpilih] as String?;
+
+  if (url == null || url.isEmpty) {
+    debugPrint('Audio surah tidak tersedia.');
+    return;
+  }
+
+  sedangAutoPlay = false;
+  await audioPlayer.stop();
+
+  try {
+    await audioPlayer.setUrl(url);
+
+    if (!mounted) return;
+
+    setState(() {
+      sedangAudioSurah = true;
+    });
+
+    await audioPlayer.play();
+  } catch (e) {
+    debugPrint('Gagal memutar audio surah: $e');
+
+    if (!mounted) return;
+
+    setState(() {
+      sedangAudioSurah = false;
+    });
+  }
+}
+
   Future<void> putarAudioAyat(
     Map<String, dynamic> ayat, {
     bool dariAutoPlay = false,
@@ -238,6 +288,14 @@ Future<void> simpanPenandaAyat(int nomorAyat) async {
     sedangAutoPlay = false;
   });
 }
+  if (!dariAutoPlay && sedangAudioSurah) {
+  await audioPlayer.stop();
+
+  setState(() {
+    sedangAudioSurah = false;
+  });
+}
+
   final audio = ayat['audio'] as Map<String, dynamic>;
   final url = audio[qariTerpilih] as String;
     if (mounted) {
@@ -277,6 +335,19 @@ Future<void> putarAyatBerikutnya() async {
         appBar: AppBar(
   title: Text(widget.namaSurah),
   actions: [
+
+   IconButton(
+  tooltip: sedangAudioSurah && audioPlayer.playing
+      ? 'Jeda Audio Surah'
+      : 'Putar Audio Surah',
+  icon: Icon(
+    sedangAudioSurah && audioPlayer.playing
+        ? Icons.pause_circle_filled
+        : Icons.library_music,
+  ),
+  onPressed: putarAudioSurah,
+),
+
     PopupMenuButton<String>(
       tooltip: 'Pilih qari',
       icon: const Icon(Icons.record_voice_over),
@@ -347,10 +418,18 @@ if (dataSurahApi != null) {
         sedangAutoPlay = false;
       });
       await audioPlayer.pause();
-    } else {
-      setState(() {
-        sedangAutoPlay = true;
-      });
+} else {
+  if (sedangAudioSurah) {
+    await audioPlayer.stop();
+
+    setState(() {
+      sedangAudioSurah = false;
+    });
+  }
+
+  setState(() {
+    sedangAutoPlay = true;
+  });
 
       if (urlAutoPlayTersimpan != null) {
         await audioPlayer.setUrl(
@@ -522,3 +601,4 @@ Row(
            super.dispose();
   }
 }
+

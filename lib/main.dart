@@ -4,6 +4,7 @@ import 'halaman_bacaan.dart';
 import 'data_surah.dart';
 import 'halaman_bookmark.dart';
 import 'api_quran.dart';
+import 'data_quran_lokal.dart';
 import 'dart:convert';
 
 
@@ -114,42 +115,45 @@ String kataPencarian = '';
 
 
 Future<void> muatDaftarSurah() async {
-  final prefs = await SharedPreferences.getInstance();
-
-  // Muat daftar yang tersimpan agar bisa digunakan offline.
-  final dataTersimpan = prefs.getString('daftar_surah');
-
-  if (dataTersimpan != null) {
-    final dataLokal =
-        (jsonDecode(dataTersimpan) as List<dynamic>)
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
+  try {
+    // Muat 114 surah dari JSON lokal.
+    final dataLokal = await ambilDaftarSurahLokal();
 
     if (!mounted) return;
 
     setState(() {
       daftarSurah = dataLokal;
     });
-  }
-    
-  // Perbarui daftar jika internet tersedia.
-  try {
-    final hasil = await ambilDaftarSurah();
 
-    await prefs.setString('daftar_surah', jsonEncode(hasil));
+    final prefs = await SharedPreferences.getInstance();
 
-    if (!mounted) return;
+    await prefs.setString(
+      'daftar_surah',
+      jsonEncode(dataLokal),
+    );
 
-    setState(() {
-      daftarSurah = hasil;
-    });
+    // Perbarui data melalui API jika internet tersedia.
+    try {
+      final hasil = await ambilDaftarSurah();
+
+      await prefs.setString(
+        'daftar_surah',
+        jsonEncode(hasil),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        daftarSurah = hasil;
+      });
+    } catch (e) {
+      debugPrint('Gagal memperbarui daftar surah dari API: $e');
+    }
   } catch (e) {
-    debugPrint('Menggunakan daftar surah tersimpan: $e');
+    debugPrint('Gagal memuat daftar surah lokal: $e');
   }
 }
 
-
-  
 Future<void> simpanDataSurahOffline(
   int nomorSurah,
   Map<String, dynamic> data,
@@ -161,7 +165,6 @@ Future<void> simpanDataSurahOffline(
     jsonEncode(data),
   );
 }
-
 
 Future<void> mulaiUnduhSemuaSurah() async {
   setState(() {
@@ -345,6 +348,7 @@ return Scaffold(
                  ),
               Card(
                child: ListTile(
+               isThreeLine: true,
               onTap: () async {
 final nama = surahTerakhir!;
 
@@ -402,65 +406,131 @@ LayoutBuilder(
       physics: const NeverScrollableScrollPhysics(),
       itemCount: surahTersaring.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: jumlahKolom,
-        childAspectRatio: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
+       crossAxisCount: jumlahKolom,
+       mainAxisExtent: 145,
+       crossAxisSpacing: 10,
+       mainAxisSpacing: 10,
+        ),
       itemBuilder: (context, index) {
         final surah = surahTersaring[index];
 
-        return Card(
-          child: ListTile(
-            onTap: () async {
-              final nama = surah['nama'] as String;
+      return Card(
+  elevation: 2,
+  color: const Color(0xFFF0F7F1),
+  margin: const EdgeInsets.symmetric(
+    horizontal: 6,
+    vertical: 5,
+  ),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(18),
+    side: BorderSide(
+      color: Colors.green.shade100,
+      width: 0.8,
+    ),
+  ),
+  child: InkWell(
+    borderRadius: BorderRadius.circular(18),
+    onTap: () async {
+      final nama = surah['nama'] as String;
 
-              setState(() {
-                surahTerakhir = nama;
-              });
+      setState(() {
+        surahTerakhir = nama;
+      });
 
-              await simpanSurahTerakhir(nama);
+      await simpanSurahTerakhir(nama);
 
-              if (!context.mounted) return;
+      if (!context.mounted) return;
 
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => HalamanBacaan(
-                    namaSurah: nama,
-                    nomorSurah: surah['nomor'] as int,
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HalamanBacaan(
+            namaSurah: nama,
+            nomorSurah: surah['nomor'] as int,
+          ),
+        ),
+      );
+
+      await muatSurahTerakhir();
+    },
+    child: Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 10,
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+          radius: 25,
+           backgroundColor: const Color(0xFFA7F3D0),
+           foregroundColor: const Color(0xFF185C46),
+           child: Text(
+          "${surah['nomor']}",
+          style: const TextStyle(
+         fontSize: 18,
+      fontWeight: FontWeight.w600,
+    ),
+  ),
+),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  surah['nama'],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                   fontSize: 17,
+                   fontWeight: FontWeight.w600,
+                    color: Color(0xFF263D32),
+                    ),
                   ),
+                const SizedBox(height: 8),
+                Text(
+                  surah['namaArab'] ?? '',
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(
+                   fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                     color: Color(0xFF185C46),
+                     ),
                 ),
-              );
-
-              await muatSurahTerakhir();
-            },
-            leading: CircleAvatar(
-              child: Text("${surah['nomor']}"),
-            ),
-            title: Text(surah['nama']),
-            subtitle: Text("${surah['jumlahAyat']} ayat"),
-            trailing: IconButton(
-              icon: Icon(
-                surahFavorit.contains(surah['nama'])
-                    ? Icons.favorite
-                    : Icons.favorite_border,
-                color: Colors.red,
-              ),
-              onPressed: () {
-                ubahFavorit(surah['nama'] as String);
-              },
-              tooltip: 'Surah favorit',
+                const SizedBox(height: 8),
+                Text(
+                  "${surah['jumlahAyat']} ayat",
+                   style: const TextStyle(
+                     fontSize: 14,
+                     color: Color(0xFF718078),
+                      ),
+                     ),
+              ],
             ),
           ),
-        );
+          IconButton(
+            icon: Icon(
+              surahFavorit.contains(surah['nama'])
+                  ? Icons.favorite
+                  : Icons.favorite_border,
+              color: Colors.red,
+            ),
+            onPressed: () {
+              ubahFavorit(surah['nama'] as String);
+            },
+            tooltip: 'Surah favorit',
+          ),
+        ],
+      ),
+    ),  ),
+      );
       },
     );
   },
 ),
-     
-       ] ),
-      ),
-    );
+      ]),
+    ));
   }
 }
