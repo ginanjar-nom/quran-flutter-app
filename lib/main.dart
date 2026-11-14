@@ -7,6 +7,10 @@ import 'api_quran.dart';
 import 'data_quran_lokal.dart';
 import 'dart:convert';
 
+import 'halaman_jadwal_sholat.dart';
+import 'halaman_belajar.dart';
+import 'halaman_lainnya.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -26,10 +30,72 @@ class MyApp extends StatelessWidget {
   ),
   useMaterial3: true,
 ),
-      home: const MyHomePage(title: "Al-Qur'an Digital"),
+      home: const HalamanNavigasi(),
     );
   }
 }
+
+
+class HalamanNavigasi extends StatefulWidget {
+  const HalamanNavigasi({super.key});
+
+  @override
+  State<HalamanNavigasi> createState() => _HalamanNavigasiState();
+}
+
+class _HalamanNavigasiState extends State<HalamanNavigasi> {
+  int halamanAktif = 0;
+
+  final List<Widget> daftarHalaman = [
+    const MyHomePage(title: "Al-Qur'an Digital"),
+    const HalamanJadwalSholat(),
+    const HalamanBelajar(),
+    const HalamanLainnya(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: halamanAktif,
+        children: daftarHalaman,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: halamanAktif,
+        onTap: (index) {
+          setState(() {
+            halamanAktif = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: const Color(0xFF1B5E20),
+        selectedItemColor: const Color(0xFFFFD700),
+        unselectedItemColor: Colors.white,
+        selectedFontSize: 12,
+        unselectedFontSize: 12,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.menu_book),
+            label: "Al-Qur'an",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.access_time),
+            label: "Jadwal Sholat",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.school),
+            label: "Belajar",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.grid_view),
+            label: "Lainnya",
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -227,29 +293,39 @@ void initState() {
     // fast, so that you can just rebuild anything that needs updating rather
    
 return Scaffold(
+ 
   appBar: AppBar(
-    backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-    title: Text(widget.title),
-    actions: [
-      IconButton(
-       icon: const Icon(Icons.download),
-       tooltip: 'Unduh semua surah untuk offline',
-        onPressed: sedangMengunduh ? null : mulaiUnduhSemuaSurah,
-        ),
-      IconButton(
-        icon: const Icon(Icons.bookmarks_outlined),
-        tooltip: 'Bookmark Saya',
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const HalamanBookmark(),
-            ),
-          );
-        },
-      ),
-    ],
+    backgroundColor: const Color(0xFF1B5E20),
+      foregroundColor: Colors.white,
+      elevation: 2,
+      title: Text(
+       widget.title,
+        style: const TextStyle(
+       fontWeight: FontWeight.bold,
+      fontSize: 20,
+    ),
   ),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.download),
+      tooltip: 'Unduh semua surah untuk offline',
+      onPressed: sedangMengunduh ? null : mulaiUnduhSemuaSurah,
+    ),
+    IconButton(
+      icon: const Icon(Icons.bookmarks_outlined),
+      tooltip: 'Bookmark Saya',
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HalamanBookmark(),
+          ),
+        );
+      },
+    ),
+  ],
+),
+
  // than having to individually change instances of widgets.
   
       body: SingleChildScrollView(
@@ -272,50 +348,115 @@ return Scaffold(
 
      children: [
       
-      Container(
+  
+Container(
   width: double.infinity,
-  padding: const EdgeInsets.all(20),
+  padding: const EdgeInsets.all(22),
   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.primary,
-    borderRadius: BorderRadius.circular(16),
+    gradient: const LinearGradient(
+      colors: [
+        Color(0xFF1B5E20),
+        Color(0xFF388E3C),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+    borderRadius: BorderRadius.circular(20),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.green.withValues(alpha: 0.18),
+        blurRadius: 12,
+        offset: const Offset(0, 5),
+      ),
+    ],
   ),
-  child: const Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+  child: Row(
     children: [
-      Text(
-        "Assalamu'alaikum",
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
+      const Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Assalamu'alaikum",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Selamat datang di Al-Qur'an Digital",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              "Temukan dan baca surah Al-Qur'an",
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       ),
-      SizedBox(height: 8),
-      Text(
-        "Selamat datang di Al-Qur'an Digital",
-        style: TextStyle(color: Colors.white),
-      ),
-      Text(
-        "Temukan dan baca surah Al-Qur'an",
-        style: TextStyle(color: Colors.white70),
+      const SizedBox(width: 12),
+      const Icon(
+        Icons.menu_book_rounded,
+        size: 55,
+        color: Colors.white70,
       ),
     ],
   ),
 ),
-            TextField(
-               controller: pencarianController,
-               decoration: const InputDecoration(
-               hintText: 'Cari nama surah...',
-               prefixIcon: Icon(Icons.search),
-               border: OutlineInputBorder(),
-                         ),
-               onChanged: (value) {
-               setState(() {
-              kataPencarian = value;
-                     });
-                   },
-                  ) 
-                   ,
+
+            
+Padding(
+  padding: const EdgeInsets.symmetric(vertical: 16),
+  child: TextField(
+    controller: pencarianController,
+    decoration: InputDecoration(
+      hintText: 'Cari nama surah...',
+      prefixIcon: const Icon(
+        Icons.search,
+        color: Color(0xFF2E7D32),
+      ),
+      filled: true,
+      fillColor: const Color(0xFFF0F7F1),
+      contentPadding: const EdgeInsets.symmetric(
+        vertical: 16,
+        horizontal: 16,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(
+          color: Color(0xFFD5E8D7),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(
+          color: Color(0xFF2E7D32),
+          width: 1.5,
+        ),
+      ),
+    ),
+    onChanged: (value) {
+      setState(() {
+        kataPencarian = value;
+      });
+    },
+  ),
+),
+
+
                   if (sedangMengunduh) ...[
                   Padding(
                   padding: const EdgeInsets.all(12),
