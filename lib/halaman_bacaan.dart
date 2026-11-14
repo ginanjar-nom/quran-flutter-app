@@ -26,8 +26,10 @@ class HalamanBacaan extends StatefulWidget {
 }
 
 class _HalamanBacaanState extends State<HalamanBacaan> {
+
 static const String teksBasmalah =
-    'Ø¨ÙØ³Ù’Ù…Ù Ø§Ù„Ù„ÙŽÙ‘Ù‡Ù Ø§Ù„Ø±ÙŽÙ‘Ø­Ù’Ù…ÙŽÙ°Ù†Ù Ø§Ù„Ø±ÙŽÙ‘Ø­ÙÙŠÙ…Ù';
+    'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
+
 
 int? ayatTerakhir;
 
