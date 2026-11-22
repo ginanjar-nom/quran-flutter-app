@@ -38,6 +38,10 @@ dependencies:
   http: ^1.6.0
   scrollable_positioned_list: ^0.3.8
   just_audio: ^0.10.6
+  geolocator: ^14.1.2
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
+  adhan: ^2.0.0+1
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +67,7 @@ flutter:
    
   assets:
     - assets/data/
+    - assets/images/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

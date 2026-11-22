@@ -11,29 +11,93 @@ import 'halaman_jadwal_sholat.dart';
 import 'halaman_belajar.dart';
 import 'halaman_lainnya.dart';
 
+ThemeData temaHalamanBacaan() {
+  return ThemeData(
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: const Color(0xFF1B6B50),
+    ),
+    useMaterial3: true,
+  );
+}
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool modeGelap = false;
+
+  @override
+  void initState() {
+    super.initState();
+    muatPengaturanTema();
+  }
+
+  Future<void> muatPengaturanTema() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+
+    setState(() {
+      modeGelap = prefs.getBool('modeGelap') ?? false;
+    });
+  }
+
+  Future<void> ubahTema(bool gelap) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('modeGelap', gelap);
+
+    if (!mounted) return;
+
+    setState(() {
+      modeGelap = gelap;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Al-Qur'an Digital",
-     theme: ThemeData(
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF1B6B50),
-  ),
-  useMaterial3: true,
-),
+      themeMode: modeGelap ? ThemeMode.dark : ThemeMode.light,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF174B3A),
+          brightness: Brightness.light,
+          surface: const Color(0xFFF5F0E5),
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF5F0E5),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF174B3A),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF28634D),
+          brightness: Brightness.dark,
+          surface: const Color(0xFF182A24),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF182A24),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF10251D),
+          foregroundColor: Color(0xFFF5F0E5),
+          elevation: 0,
+        ),
+        useMaterial3: true,
+      ),
       home: const HalamanNavigasi(),
     );
   }
 }
+
 
 
 class HalamanNavigasi extends StatefulWidget {
@@ -68,9 +132,9 @@ class _HalamanNavigasiState extends State<HalamanNavigasi> {
           });
         },
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF1B5E20),
-        selectedItemColor: const Color(0xFFFFD700),
-        unselectedItemColor: Colors.white,
+        backgroundColor: const Color(0xFF174B3A),
+        selectedItemColor: const Color(0xFFC5A45D),
+        unselectedItemColor: const Color(0xFFE5E0D5),
         selectedFontSize: 12,
         unselectedFontSize: 12,
         items: const [
@@ -295,7 +359,7 @@ void initState() {
 return Scaffold(
  
   appBar: AppBar(
-    backgroundColor: const Color(0xFF1B5E20),
+     backgroundColor: const Color(0xFF174B3A),
       foregroundColor: Colors.white,
       elevation: 2,
       title: Text(
@@ -353,23 +417,27 @@ Container(
   width: double.infinity,
   padding: const EdgeInsets.all(22),
   decoration: BoxDecoration(
-    gradient: const LinearGradient(
-      colors: [
-        Color(0xFF1B5E20),
-        Color(0xFF388E3C),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    ),
-    borderRadius: BorderRadius.circular(20),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.green.withValues(alpha: 0.18),
-        blurRadius: 12,
-        offset: const Offset(0, 5),
-      ),
+  gradient: const LinearGradient(
+    colors: [
+      Color(0xFF174B3A),
+      Color(0xFF28634D),
     ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   ),
+  borderRadius: BorderRadius.circular(20),
+  border: Border.all(
+    color: const Color(0xFFC5A45D).withValues(alpha: 0.45),
+    width: 1,
+  ),
+  boxShadow: [
+    BoxShadow(
+      color: const Color(0xFF174B3A).withValues(alpha: 0.12),
+      blurRadius: 10,
+      offset: const Offset(0, 4),
+    ),
+  ],
+),
   child: Row(
     children: [
       const Expanded(
@@ -396,7 +464,7 @@ Container(
             Text(
               "Temukan dan baca surah Al-Qur'an",
               style: TextStyle(
-                color: Colors.white70,
+                color: Color(0xFFC5A45D),
                 fontSize: 13,
               ),
             ),
@@ -504,13 +572,16 @@ if (!context.mounted) return;
 Navigator.push(
 context,
 MaterialPageRoute(
-builder: (context) => HalamanBacaan(
+builder: (context) => Theme(
+  data: temaHalamanBacaan(),
+  child: HalamanBacaan(
 namaSurah: nama,
 nomorSurah: daftarSurah.firstWhere(
   (item) => item['nama'] == nama,
 )['nomor'] as int,
 ),
 ),
+)
 );
 },
           leading: const Icon(Icons.menu_book),
@@ -557,16 +628,18 @@ LayoutBuilder(
 
       return Card(
   elevation: 2,
-  color: const Color(0xFFF0F7F1),
+  color: Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF243B32)
+      : const Color(0xFFFFFCF5),
   margin: const EdgeInsets.symmetric(
     horizontal: 6,
     vertical: 5,
   ),
   shape: RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(18),
-    side: BorderSide(
-      color: Colors.green.shade100,
-      width: 0.8,
+   side: BorderSide(
+    color: const Color(0xFFC5A45D).withValues(alpha: 0.4),
+    width: 0.8,
     ),
   ),
   child: InkWell(
@@ -585,12 +658,15 @@ LayoutBuilder(
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => HalamanBacaan(
-            namaSurah: nama,
-            nomorSurah: surah['nomor'] as int,
-          ),
-        ),
-      );
+          builder: (context) => Theme(
+  data: temaHalamanBacaan(),
+  child: HalamanBacaan(
+    namaSurah: nama,
+    nomorSurah: surah['nomor'] as int,
+      ),
+     ),
+    ),
+  );
 
       await muatSurahTerakhir();
     },
@@ -603,8 +679,8 @@ LayoutBuilder(
         children: [
           CircleAvatar(
           radius: 25,
-           backgroundColor: const Color(0xFFA7F3D0),
-           foregroundColor: const Color(0xFF185C46),
+           backgroundColor: const Color(0xFF174B3A),
+           foregroundColor: const Color(0xFFC5A45D),
            child: Text(
           "${surah['nomor']}",
           style: const TextStyle(
@@ -621,32 +697,39 @@ LayoutBuilder(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  surah['nama'],
+                  surah['namaLatin'] ?? surah['nama'] ?? '',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                   fontSize: 17,
-                   fontWeight: FontWeight.w600,
-                    color: Color(0xFF263D32),
+                  style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFFF5F0E5)
+                : const Color(0xFF263D32),
+
                     ),
                   ),
                 const SizedBox(height: 8),
                 Text(
                   surah['namaArab'] ?? '',
                   textDirection: TextDirection.rtl,
-                  style: const TextStyle(
-                   fontSize: 21,
-                    fontWeight: FontWeight.bold,
-                     color: Color(0xFF185C46),
-                     ),
+                  style: TextStyle(
+                fontSize: 21,
+                 fontWeight: FontWeight.bold,
+                 color: Theme.of(context).brightness == Brightness.dark
+                 ? const Color(0xFFC5A45D)
+                  : const Color(0xFF174B3A),
+                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   "${surah['jumlahAyat']} ayat",
-                   style: const TextStyle(
-                     fontSize: 14,
-                     color: Color(0xFF718078),
-                      ),
+                   style: TextStyle(
+              fontSize: 14,
+               color: Theme.of(context).brightness == Brightness.dark
+                 ? const Color(0xFFCFD8D2)
+                  : const Color(0xFF718078),
+                    ),
                      ),
               ],
             ),
@@ -656,8 +739,12 @@ LayoutBuilder(
               surahFavorit.contains(surah['nama'])
                   ? Icons.favorite
                   : Icons.favorite_border,
-              color: Colors.red,
-            ),
+             color: surahFavorit.contains(surah['nama'])
+               ? const Color(0xFFC5A45D)
+               : Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFFCFD8D2)
+               : const Color(0xFF718078),
+                ),
             onPressed: () {
               ubahFavorit(surah['nama'] as String);
             },

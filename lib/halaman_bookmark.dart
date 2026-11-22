@@ -61,7 +61,8 @@ for (final surah in semuaSurah) {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+  backgroundColor: const Color(0xFFF5F0E5),
+  appBar: AppBar(
         title: const Text('Bookmark Saya'),
       ),
      
@@ -88,9 +89,9 @@ body: ListView(
       ...daftarFavorit.map((namaSurah) {
         return ListTile(
           leading: const Icon(
-            Icons.favorite,
-            color: Colors.red,
-          ),
+          Icons.favorite,
+            color: Color(0xFFC5A45D),
+            ),
           title: Text(namaSurah),
           trailing: const Icon(Icons.chevron_right),
           onTap: () {
@@ -129,7 +130,10 @@ body: ListView(
     else
       ...penandaAyat.entries.map((penanda) {
         return ListTile(
-          leading: const Icon(Icons.bookmark),
+          leading: const Icon(
+          Icons.bookmark,
+           color: Color(0xFFC5A45D),
+           ),
           title: Text(penanda.key),
           subtitle: Text('Ayat ${penanda.value}'),
           trailing: const Icon(Icons.chevron_right),
